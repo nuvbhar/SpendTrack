@@ -27,6 +27,12 @@ public class JdbcExpenseDao implements ExpenseDao {
     }
 
     @Override
+    public List<Expense> search(String query) {
+        String sql = "SELECT id, title, amount, category, date FROM expenses WHERE LOWER(title) LIKE ? ORDER BY date DESC, id DESC";
+        return queryExpenses(sql, "%" + query.toLowerCase().trim() + "%");
+    }
+
+    @Override
     public void save(Expense expense) {
         String sql = "INSERT INTO expenses (title, amount, category, date) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
@@ -65,6 +71,33 @@ public class JdbcExpenseDao implements ExpenseDao {
         }
     }
 
+    @Override
+    public int getTransactionCount() {
+        String sql = "SELECT COUNT(*) FROM expenses";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error counting transactions", e);
+        }
+    }
+
+    @Override
+    public Category getTopCategory() {
+        String sql = "SELECT category FROM expenses GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return Category.valueOf(rs.getString("category"));
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error calculating top category", e);
+        }
+    }
+
     private List<Expense> queryExpenses(String sql, String... params) {
         List<Expense> expenses = new ArrayList<>();
         try (Connection conn = DatabaseManager.getConnection();
@@ -89,4 +122,3 @@ public class JdbcExpenseDao implements ExpenseDao {
         return expenses;
     }
 }
-

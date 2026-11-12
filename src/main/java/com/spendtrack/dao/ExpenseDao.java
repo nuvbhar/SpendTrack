@@ -12,8 +12,10 @@ import java.util.List;
 public interface ExpenseDao {
     List<Expense> findAll();
     List<Expense> findByCategory(Category category);
+    List<Expense> search(String query);
     void save(Expense expense);
     void delete(long id);
     double getTotalAmount();
+    int getTransactionCount();
+    Category getTopCategory();
 }
-

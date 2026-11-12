@@ -1,6 +1,6 @@
 package com.spendtrack;
 
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.spendtrack.dao.DatabaseManager;
 import com.spendtrack.dao.ExpenseDao;
 import com.spendtrack.dao.JdbcExpenseDao;
@@ -10,14 +10,16 @@ import javax.swing.*;
 
 /**
  * Main application bootstrap.
- * Configures the FlatLaf theme, prepares the database, and schedules GUI launch on EDT.
+ * Configures the FlatMacDarkLaf modern theme, prepares the database, and schedules GUI launch on EDT.
  */
 public class Main {
     public static void main(String[] args) {
-        // 1. Enable modern window decorations and FlatLaf theme
+        // 1. Enable modern window decorations and FlatMacDark theme (Linear/Raycast aesthetic)
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
         JFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);
-        FlatLightLaf.setup();
+        FlatMacDarkLaf.setup();
 
         // 2. Initialize the database schema
         DatabaseManager.initDatabase();
@@ -30,4 +32,3 @@ public class Main {
         });
     }
 }
-

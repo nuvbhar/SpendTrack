@@ -24,12 +24,10 @@ class ExpenseDaoTest {
 
     @Test
     void testExpenseModelValidation() {
-        // Assert invalid title throws
         assertThrows(IllegalArgumentException.class, () ->
             new Expense("   ", 10.0, Category.FOOD, LocalDate.now())
         );
 
-        // Assert non-positive amount throws
         assertThrows(IllegalArgumentException.class, () ->
             new Expense("Coffee", -5.0, Category.FOOD, LocalDate.now())
         );
@@ -37,18 +35,20 @@ class ExpenseDaoTest {
 
     @Test
     void testCrudOperations() {
-        int initialCount = expenseDao.findAll().size();
+        int initialCount = expenseDao.getTransactionCount();
         double initialTotal = expenseDao.getTotalAmount();
 
         // 1. Create & Save
         Expense testExpense = new Expense("Unit Test Coffee", 5.50, Category.FOOD, LocalDate.now());
         expenseDao.save(testExpense);
 
-        List<Expense> expenses = expenseDao.findAll();
-        assertEquals(initialCount + 1, expenses.size());
+        assertEquals(initialCount + 1, expenseDao.getTransactionCount());
         assertEquals(initialTotal + 5.50, expenseDao.getTotalAmount(), 0.001);
 
-        Expense saved = expenses.stream()
+        List<Expense> searchResults = expenseDao.search("Coffee");
+        assertFalse(searchResults.isEmpty());
+
+        Expense saved = searchResults.stream()
             .filter(e -> "Unit Test Coffee".equals(e.title()))
             .findFirst()
             .orElseThrow();
@@ -60,11 +60,13 @@ class ExpenseDaoTest {
         List<Expense> foodExpenses = expenseDao.findByCategory(Category.FOOD);
         assertTrue(foodExpenses.stream().anyMatch(e -> e.id().equals(saved.id())));
 
-        // 3. Delete
+        // 3. Top Category calculation
+        Category topCat = expenseDao.getTopCategory();
+        assertNotNull(topCat);
+
+        // 4. Delete
         expenseDao.delete(saved.id());
-        List<Expense> afterDelete = expenseDao.findAll();
-        assertEquals(initialCount, afterDelete.size());
+        assertEquals(initialCount, expenseDao.getTransactionCount());
         assertEquals(initialTotal, expenseDao.getTotalAmount(), 0.001);
     }
 }
-

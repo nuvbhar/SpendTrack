@@ -1,5 +1,6 @@
 package com.spendtrack.ui;
 
+import com.spendtrack.model.Category;
 import com.spendtrack.model.Expense;
 
 import javax.swing.table.AbstractTableModel;
@@ -13,7 +14,7 @@ import java.util.Locale;
  * Demonstrates Inheritance (extending AbstractTableModel) and the Adapter/MVC pattern.
  */
 public class ExpenseTableModel extends AbstractTableModel {
-    private static final String[] COLUMNS = {"ID", "Date", "Description", "Category", "Amount"};
+    private static final String[] COLUMNS = {"Date", "Description", "Category", "Amount"};
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
 
     private List<Expense> expenses = new ArrayList<>();
@@ -46,16 +47,22 @@ public class ExpenseTableModel extends AbstractTableModel {
     }
 
     @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        return switch (columnIndex) {
+            case 2 -> Category.class;
+            default -> String.class;
+        };
+    }
+
+    @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         Expense expense = expenses.get(rowIndex);
         return switch (columnIndex) {
-            case 0 -> expense.id();
-            case 1 -> expense.date();
-            case 2 -> expense.title();
-            case 3 -> expense.category().getDisplayName();
-            case 4 -> CURRENCY_FORMAT.format(expense.amount());
+            case 0 -> expense.date().toString();
+            case 1 -> expense.title();
+            case 2 -> expense.category();
+            case 3 -> CURRENCY_FORMAT.format(expense.amount());
             default -> null;
         };
     }
 }
-
