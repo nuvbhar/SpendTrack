@@ -10,38 +10,37 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Modern Linear/Raycast-styled desktop interface for SpendTrack.
- * Features a multi-card KPI dashboard, live search, category badges, and modal dialogs.
+ * Configured with Indian Rupee (₹) currency formatting, multi-card KPI dashboard,
+ * live search, category badges, and modal dialogs.
  */
 public class MainFrame extends JFrame {
-    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
 
     private final ExpenseDao expenseDao;
     private final ExpenseTableModel tableModel = new ExpenseTableModel();
     private final JTable expenseTable = new JTable(tableModel);
 
     // KPI Metric Labels
-    private final JLabel totalAmountLabel = new JLabel("$0.00");
+    private final JLabel totalAmountLabel = new JLabel("₹ 0.00");
     private final JLabel transactionCountLabel = new JLabel("0 Entries");
     private final JLabel topCategoryLabel = new JLabel("None");
 
     // Controls
-    private final JTextField searchField = new JTextField(16);
+    private final JTextField searchField = new JTextField(18);
     private final JComboBox<String> filterComboBox = new JComboBox<>();
 
     public MainFrame(ExpenseDao expenseDao) {
         this.expenseDao = expenseDao;
 
-        setTitle("SpendTrack — Modern Financial Analytics");
+        setTitle("SpendTrack — Personal Finance & Expense Tracker");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(960, 680);
-        setMinimumSize(new Dimension(800, 520));
+        setSize(980, 680);
+        setMinimumSize(new Dimension(820, 530));
         setLocationRelativeTo(null);
 
         initUi();
@@ -73,7 +72,7 @@ public class MainFrame extends JFrame {
         JPanel brandGroup = new JPanel(new GridLayout(2, 1, 0, 2));
         JLabel title = new JLabel("⚡ SpendTrack");
         title.putClientProperty(FlatClientProperties.STYLE, "font: 165% bold;");
-        JLabel subtitle = new JLabel("Personal Finance & Real-time Expense Tracking");
+        JLabel subtitle = new JLabel("Personal Financial Tracker & Outflow Analytics");
         subtitle.putClientProperty(FlatClientProperties.STYLE, "foreground: $Label.disabledForeground;");
         brandGroup.add(title);
         brandGroup.add(subtitle);
@@ -96,7 +95,7 @@ public class MainFrame extends JFrame {
         transactionCountLabel.putClientProperty(FlatClientProperties.STYLE, "font: 175% bold; foreground: #38BDF8;");
         topCategoryLabel.putClientProperty(FlatClientProperties.STYLE, "font: 155% bold; foreground: #A78BFA;");
 
-        dashboardGrid.add(createKpiCard("TOTAL EXPENDITURE", totalAmountLabel, "Cumulative all-time spend"));
+        dashboardGrid.add(createKpiCard("TOTAL EXPENDITURE", totalAmountLabel, "Cumulative all-time spend in INR"));
         dashboardGrid.add(createKpiCard("TRANSACTIONS", transactionCountLabel, "Total logged payments"));
         dashboardGrid.add(createKpiCard("TOP CATEGORY", topCategoryLabel, "Highest outflow category"));
 
@@ -165,12 +164,21 @@ public class MainFrame extends JFrame {
         expenseTable.setIntercellSpacing(new Dimension(0, 0));
         expenseTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Date Column: Centered & subtle
+        // Configure Explicit Column Widths
+        TableColumnModel colModel = expenseTable.getColumnModel();
+        colModel.getColumn(0).setPreferredWidth(110);
+        colModel.getColumn(0).setMaxWidth(130);
+        colModel.getColumn(1).setPreferredWidth(340);
+        colModel.getColumn(2).setPreferredWidth(190);
+        colModel.getColumn(3).setPreferredWidth(140);
+        colModel.getColumn(3).setMaxWidth(160);
+
+        // Date Column: Centered
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        expenseTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        colModel.getColumn(0).setCellRenderer(centerRenderer);
 
-        // Description Column: Bold left-aligned
+        // Description Column: Bold font with left padding
         DefaultTableCellRenderer descRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
@@ -180,12 +188,12 @@ public class MainFrame extends JFrame {
                 return c;
             }
         };
-        expenseTable.getColumnModel().getColumn(1).setCellRenderer(descRenderer);
+        colModel.getColumn(1).setCellRenderer(descRenderer);
 
         // Category Column: Custom Pill Badge
-        expenseTable.getColumnModel().getColumn(2).setCellRenderer(new CategoryBadgeRenderer());
+        colModel.getColumn(2).setCellRenderer(new CategoryBadgeRenderer());
 
-        // Amount Column: Right-aligned bold red/rose
+        // Amount Column: Right-aligned bold red/rose currency
         DefaultTableCellRenderer amountRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
@@ -197,7 +205,7 @@ public class MainFrame extends JFrame {
                 return c;
             }
         };
-        expenseTable.getColumnModel().getColumn(3).setCellRenderer(amountRenderer);
+        colModel.getColumn(3).setCellRenderer(amountRenderer);
 
         JScrollPane scrollPane = new JScrollPane(expenseTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 25), 1, true));
@@ -221,7 +229,7 @@ public class MainFrame extends JFrame {
         if (expense != null) {
             int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Delete '" + expense.title() + "' (" + CURRENCY_FORMAT.format(expense.amount()) + ")?",
+                "Delete '" + expense.title() + "' (" + ExpenseTableModel.formatRupees(expense.amount()) + ")?",
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
@@ -263,7 +271,7 @@ public class MainFrame extends JFrame {
         int count = expenseDao.getTransactionCount();
         Category topCat = expenseDao.getTopCategory();
 
-        totalAmountLabel.setText(CURRENCY_FORMAT.format(total));
+        totalAmountLabel.setText(ExpenseTableModel.formatRupees(total));
         transactionCountLabel.setText(count + (count == 1 ? " Entry" : " Entries"));
         topCategoryLabel.setText(topCat != null ? topCat.getIcon() + " " + topCat.getDisplayName() : "None yet");
     }

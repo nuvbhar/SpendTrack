@@ -15,7 +15,16 @@ import java.util.Locale;
  */
 public class ExpenseTableModel extends AbstractTableModel {
     private static final String[] COLUMNS = {"Date", "Description", "Category", "Amount"};
-    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final NumberFormat INDIAN_NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.of("en", "IN"));
+
+    static {
+        INDIAN_NUMBER_FORMAT.setMinimumFractionDigits(2);
+        INDIAN_NUMBER_FORMAT.setMaximumFractionDigits(2);
+    }
+
+    public static String formatRupees(double amount) {
+        return "₹ " + INDIAN_NUMBER_FORMAT.format(amount);
+    }
 
     private List<Expense> expenses = new ArrayList<>();
 
@@ -61,7 +70,7 @@ public class ExpenseTableModel extends AbstractTableModel {
             case 0 -> expense.date().toString();
             case 1 -> expense.title();
             case 2 -> expense.category();
-            case 3 -> CURRENCY_FORMAT.format(expense.amount());
+            case 3 -> formatRupees(expense.amount());
             default -> null;
         };
     }

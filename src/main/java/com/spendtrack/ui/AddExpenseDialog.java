@@ -9,6 +9,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 
 /**
@@ -29,11 +31,19 @@ public class AddExpenseDialog extends JDialog {
         this.expenseDao = expenseDao;
         this.onSuccessCallback = onSuccessCallback;
 
-        setSize(440, 480);
+        setSize(450, 490);
         setResizable(false);
         setLocationRelativeTo(parent);
 
         initUi();
+
+        // Auto-focus title field when dialog opens
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                titleField.requestFocusInWindow();
+            }
+        });
     }
 
     private void initUi() {
@@ -54,7 +64,7 @@ public class AddExpenseDialog extends JDialog {
         // Form Fields
         JPanel formGrid = new JPanel(new GridLayout(4, 1, 0, 12));
 
-        titleField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "e.g. Grocery store, Netflix subscription");
+        titleField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "e.g. Grocery store, Swiggy, Metro pass");
         titleField.putClientProperty(FlatClientProperties.STYLE, "arc: 10;");
 
         amountField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "0.00");
@@ -66,7 +76,7 @@ public class AddExpenseDialog extends JDialog {
         dateField.putClientProperty(FlatClientProperties.STYLE, "arc: 10;");
 
         formGrid.add(createFieldGroup("Description", titleField));
-        formGrid.add(createFieldGroup("Amount ($)", amountField));
+        formGrid.add(createFieldGroup("Amount (₹)", amountField));
         formGrid.add(createFieldGroup("Category", categoryComboBox));
         formGrid.add(createFieldGroup("Date", dateField));
 
@@ -130,7 +140,7 @@ public class AddExpenseDialog extends JDialog {
                 onSuccessCallback.run();
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Amount must be a valid number (e.g. 15.50).", "Invalid Amount", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Amount must be a valid number in Rupees (e.g. 350.50).", "Invalid Amount", JOptionPane.ERROR_MESSAGE);
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Validation Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
