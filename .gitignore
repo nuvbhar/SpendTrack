@@ -1,0 +1,24 @@
+# Compiled class files
+target/
+*.class
+
+# SQLite databases
+*.db
+*.db-journal
+*.sqlite
+
+# Log files
+*.log
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
