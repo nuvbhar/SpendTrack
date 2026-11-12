@@ -202,6 +202,10 @@ public class MainFrame extends JFrame {
         expenseTable.setIntercellSpacing(new Dimension(0, 0));
         expenseTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+        // Frosted White Row Selection Highlighting
+        expenseTable.setSelectionBackground(new Color(255, 255, 255, 35));
+        expenseTable.setSelectionForeground(Color.WHITE);
+
         // Double-click to Edit row
         expenseTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -221,27 +225,45 @@ public class MainFrame extends JFrame {
         colModel.getColumn(3).setPreferredWidth(140);
         colModel.getColumn(3).setMaxWidth(160);
 
-        // Date Column: Centered
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        // Date Column: Centered with White Selection Highlight
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                if (isSelected) {
+                    c.setForeground(Color.WHITE);
+                    c.setBackground(table.getSelectionBackground());
+                } else {
+                    c.setForeground(UIManager.getColor("Label.disabledForeground"));
+                }
+                return c;
+            }
+        };
         colModel.getColumn(0).setCellRenderer(centerRenderer);
 
-        // Description Column: Bold font with left padding
+        // Description Column: Bold font with White Selection Highlight
         DefaultTableCellRenderer descRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 c.setFont(c.getFont().deriveFont(Font.BOLD));
                 setBorder(new EmptyBorder(0, 12, 0, 0));
+                if (isSelected) {
+                    c.setForeground(Color.WHITE);
+                    c.setBackground(table.getSelectionBackground());
+                } else {
+                    c.setForeground(UIManager.getColor("Label.foreground"));
+                }
                 return c;
             }
         };
         colModel.getColumn(1).setCellRenderer(descRenderer);
 
-        // Category Column: Custom Pill Badge
+        // Category Column: Custom Pill Badge with Continuous Row Highlight
         colModel.getColumn(2).setCellRenderer(new CategoryBadgeRenderer());
 
-        // Amount Column: Right-aligned bold red/rose currency
+        // Amount Column: Right-aligned bold currency with White Selection Highlight
         DefaultTableCellRenderer amountRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
@@ -249,7 +271,12 @@ public class MainFrame extends JFrame {
                 setHorizontalAlignment(SwingConstants.RIGHT);
                 setBorder(new EmptyBorder(0, 0, 0, 16));
                 c.setFont(c.getFont().deriveFont(Font.BOLD, 13f));
-                c.setForeground(new Color(248, 113, 113));
+                if (isSelected) {
+                    c.setForeground(Color.WHITE);
+                    c.setBackground(table.getSelectionBackground());
+                } else {
+                    c.setForeground(new Color(248, 113, 113));
+                }
                 return c;
             }
         };

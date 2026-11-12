@@ -121,3 +121,4 @@ public class AnalyticsDialog extends JDialog {
         return row;
     }
 }
+
