@@ -21,7 +21,7 @@ public final class DatabaseManager {
     }
 
     public static void initDatabase() {
-        String createTableSql = """
+        String schema = """
             CREATE TABLE IF NOT EXISTS expenses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -29,14 +29,18 @@ public final class DatabaseManager {
                 category TEXT NOT NULL,
                 date TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+            INSERT OR IGNORE INTO settings (key, value) VALUES ('monthly_budget', '25000.0');
             """;
 
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
-            stmt.execute(createTableSql);
+            stmt.executeUpdate(schema);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);
         }
     }
 }
-

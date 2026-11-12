@@ -14,11 +14,12 @@ import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 
 /**
- * Modern modal dialog for creating a new expense.
+ * Modern modal dialog for creating or editing an expense.
  * Encapsulates input validation, keyboard shortcuts, and clean visual styling.
  */
 public class AddExpenseDialog extends JDialog {
     private final ExpenseDao expenseDao;
+    private final Expense existingExpense;
     private final Runnable onSuccessCallback;
 
     private final JTextField titleField = new JTextField(20);
@@ -27,8 +28,13 @@ public class AddExpenseDialog extends JDialog {
     private final JTextField dateField = new JTextField(LocalDate.now().toString(), 20);
 
     public AddExpenseDialog(JFrame parent, ExpenseDao expenseDao, Runnable onSuccessCallback) {
-        super(parent, "New Expense", true);
+        this(parent, expenseDao, null, onSuccessCallback);
+    }
+
+    public AddExpenseDialog(JFrame parent, ExpenseDao expenseDao, Expense existingExpense, Runnable onSuccessCallback) {
+        super(parent, existingExpense == null ? "New Expense" : "Edit Expense", true);
         this.expenseDao = expenseDao;
+        this.existingExpense = existingExpense;
         this.onSuccessCallback = onSuccessCallback;
 
         setSize(450, 490);
@@ -36,6 +42,13 @@ public class AddExpenseDialog extends JDialog {
         setLocationRelativeTo(parent);
 
         initUi();
+
+        if (existingExpense != null) {
+            titleField.setText(existingExpense.title());
+            amountField.setText(String.format(java.util.Locale.US, "%.2f", existingExpense.amount()));
+            categoryComboBox.setSelectedItem(existingExpense.category());
+            dateField.setText(existingExpense.date().toString());
+        }
 
         // Auto-focus title field when dialog opens
         addWindowListener(new WindowAdapter() {
@@ -51,11 +64,13 @@ public class AddExpenseDialog extends JDialog {
         contentPane.setBorder(new EmptyBorder(24, 28, 24, 28));
         setContentPane(contentPane);
 
+        boolean isEdit = existingExpense != null;
+
         // Header Panel
         JPanel headerPanel = new JPanel(new GridLayout(2, 1, 0, 4));
-        JLabel titleLabel = new JLabel("Add New Expense");
+        JLabel titleLabel = new JLabel(isEdit ? "Edit Expense" : "Add New Expense");
         titleLabel.putClientProperty(FlatClientProperties.STYLE, "font: 140% bold;");
-        JLabel subtitleLabel = new JLabel("Record a purchase or payment into your tracker.");
+        JLabel subtitleLabel = new JLabel(isEdit ? "Update details for record #" + existingExpense.id() : "Record a purchase or payment into your tracker.");
         subtitleLabel.putClientProperty(FlatClientProperties.STYLE, "foreground: $Label.disabledForeground;");
         headerPanel.add(titleLabel);
         headerPanel.add(subtitleLabel);
@@ -88,7 +103,7 @@ public class AddExpenseDialog extends JDialog {
         cancelBtn.putClientProperty(FlatClientProperties.STYLE, "arc: 10;");
         cancelBtn.addActionListener(e -> dispose());
 
-        JButton saveBtn = new JButton("Save Expense");
+        JButton saveBtn = new JButton(isEdit ? "Update Expense" : "Save Expense");
         saveBtn.putClientProperty(FlatClientProperties.STYLE, "arc: 10; background: #6366F1; foreground: #ffffff; font: bold;");
         saveBtn.addActionListener(e -> saveExpense());
 
@@ -132,8 +147,13 @@ public class AddExpenseDialog extends JDialog {
             double amount = Double.parseDouble(amountText);
             LocalDate date = LocalDate.parse(dateText);
 
-            Expense expense = new Expense(title, amount, category, date);
-            expenseDao.save(expense);
+            if (existingExpense != null) {
+                Expense updated = new Expense(existingExpense.id(), title, amount, category, date);
+                expenseDao.update(updated);
+            } else {
+                Expense expense = new Expense(title, amount, category, date);
+                expenseDao.save(expense);
+            }
 
             dispose();
             if (onSuccessCallback != null) {

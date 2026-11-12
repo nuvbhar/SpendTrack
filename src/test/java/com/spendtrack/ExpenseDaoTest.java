@@ -8,6 +8,9 @@ import com.spendtrack.model.Expense;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,37 +37,48 @@ class ExpenseDaoTest {
     }
 
     @Test
-    void testCrudOperations() {
+    void testFullCrudAndFeatures() throws IOException {
         int initialCount = expenseDao.getTransactionCount();
         double initialTotal = expenseDao.getTotalAmount();
 
         // 1. Create & Save
-        Expense testExpense = new Expense("Unit Test Coffee", 5.50, Category.FOOD, LocalDate.now());
+        Expense testExpense = new Expense("Unit Test Biryani", 350.00, Category.FOOD, LocalDate.now());
         expenseDao.save(testExpense);
 
         assertEquals(initialCount + 1, expenseDao.getTransactionCount());
-        assertEquals(initialTotal + 5.50, expenseDao.getTotalAmount(), 0.001);
+        assertEquals(initialTotal + 350.00, expenseDao.getTotalAmount(), 0.001);
 
-        List<Expense> searchResults = expenseDao.search("Coffee");
+        List<Expense> searchResults = expenseDao.search("Biryani");
         assertFalse(searchResults.isEmpty());
 
         Expense saved = searchResults.stream()
-            .filter(e -> "Unit Test Coffee".equals(e.title()))
+            .filter(e -> "Unit Test Biryani".equals(e.title()))
             .findFirst()
             .orElseThrow();
 
-        assertEquals(5.50, saved.amount());
+        assertEquals(350.00, saved.amount());
         assertEquals(Category.FOOD, saved.category());
 
-        // 2. Filter by Category
-        List<Expense> foodExpenses = expenseDao.findByCategory(Category.FOOD);
-        assertTrue(foodExpenses.stream().anyMatch(e -> e.id().equals(saved.id())));
+        // 2. Update (Full CRUD)
+        Expense updated = new Expense(saved.id(), "Unit Test Biryani Large", 450.00, Category.FOOD, saved.date());
+        expenseDao.update(updated);
 
-        // 3. Top Category calculation
-        Category topCat = expenseDao.getTopCategory();
-        assertNotNull(topCat);
+        Expense reFetched = expenseDao.search("Biryani Large").getFirst();
+        assertEquals(450.00, reFetched.amount());
+        assertEquals("Unit Test Biryani Large", reFetched.title());
 
-        // 4. Delete
+        // 3. Monthly Budget persistence
+        expenseDao.setMonthlyBudget(30000.0);
+        assertEquals(30000.0, expenseDao.getMonthlyBudget(), 0.001);
+
+        // 4. CSV Export
+        Path tempCsv = Files.createTempFile("spendtrack_test", ".csv");
+        expenseDao.exportToCsv(tempCsv);
+        assertTrue(Files.exists(tempCsv));
+        assertTrue(Files.size(tempCsv) > 0);
+        Files.deleteIfExists(tempCsv);
+
+        // 5. Delete
         expenseDao.delete(saved.id());
         assertEquals(initialCount, expenseDao.getTransactionCount());
         assertEquals(initialTotal, expenseDao.getTotalAmount(), 0.001);

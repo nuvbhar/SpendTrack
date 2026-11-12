@@ -3,6 +3,10 @@ package com.spendtrack.dao;
 import com.spendtrack.model.Category;
 import com.spendtrack.model.Expense;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,6 +48,25 @@ public class JdbcExpenseDao implements ExpenseDao {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error saving expense: " + expense.title(), e);
+        }
+    }
+
+    @Override
+    public void update(Expense expense) {
+        if (expense.id() == null) {
+            throw new IllegalArgumentException("Cannot update expense without an ID");
+        }
+        String sql = "UPDATE expenses SET title = ?, amount = ?, category = ?, date = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, expense.title());
+            stmt.setDouble(2, expense.amount());
+            stmt.setString(3, expense.category().name());
+            stmt.setString(4, expense.date().toString());
+            stmt.setLong(5, expense.id());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating expense with id: " + expense.id(), e);
         }
     }
 
@@ -96,6 +119,46 @@ public class JdbcExpenseDao implements ExpenseDao {
         } catch (SQLException e) {
             throw new RuntimeException("Error calculating top category", e);
         }
+    }
+
+    @Override
+    public double getMonthlyBudget() {
+        String sql = "SELECT value FROM settings WHERE key = 'monthly_budget'";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? Double.parseDouble(rs.getString("value")) : 25000.0;
+        } catch (SQLException | NumberFormatException e) {
+            return 25000.0;
+        }
+    }
+
+    @Override
+    public void setMonthlyBudget(double budget) {
+        String sql = "INSERT INTO settings (key, value) VALUES ('monthly_budget', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, String.valueOf(budget));
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating monthly budget", e);
+        }
+    }
+
+    @Override
+    public void exportToCsv(Path destination) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add("ID,Date,Description,Category,Amount_INR");
+        for (Expense e : findAll()) {
+            lines.add(String.format("%d,%s,\"%s\",%s,%.2f",
+                e.id(),
+                e.date(),
+                e.title().replace("\"", "\"\""),
+                e.category().getDisplayName(),
+                e.amount()
+            ));
+        }
+        Files.write(destination, lines, StandardCharsets.UTF_8);
     }
 
     private List<Expense> queryExpenses(String sql, String... params) {
