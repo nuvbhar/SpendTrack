@@ -98,3 +98,4 @@ CREATE TABLE IF NOT EXISTS expenses (
     date TEXT NOT NULL
 );
 ```
+

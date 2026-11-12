@@ -67,3 +67,4 @@ class ExpenseDaoTest {
         assertEquals(initialTotal, expenseDao.getTotalAmount(), 0.001);
     }
 }
+

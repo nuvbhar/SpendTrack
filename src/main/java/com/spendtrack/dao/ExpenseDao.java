@@ -16,3 +16,4 @@ public interface ExpenseDao {
     void delete(long id);
     double getTotalAmount();
 }
+

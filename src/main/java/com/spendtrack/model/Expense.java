@@ -28,3 +28,4 @@ public record Expense(Long id, String title, double amount, Category category, L
         this(null, title, amount, category, date);
     }
 }
+

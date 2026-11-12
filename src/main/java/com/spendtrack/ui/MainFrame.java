@@ -264,3 +264,4 @@ public class MainFrame extends JFrame {
         totalAmountLabel.setText(CURRENCY_FORMAT.format(total));
     }
 }
+
